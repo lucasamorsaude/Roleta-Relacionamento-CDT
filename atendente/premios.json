@@ -1,0 +1,23 @@
+[
+  {
+    "nome": "Desconto de 10% em Farmácia",
+    "chance": 50
+  },
+  {
+    "nome": "Exame de Vista",
+    "chance": 20
+  },
+  {
+    "nome": "Consulta Clínica",
+    "chance": 15
+  },
+  {
+    "nome": "Limpeza Dental Simples",
+    "chance": 10
+  },
+  {
+    "nome": "Check-up Básico",
+    "chance": 5
+  }
+  
+]

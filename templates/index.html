@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Roleta de Prêmios</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --cor-principal: #005c97;
+            --cor-secundaria: #363795;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(45deg, var(--cor-principal), var(--cor-secundaria));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .roleta-container {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 420px;
+            width: 90%;
+        }
+        h2 {
+            margin-top: 0;
+            margin-bottom: 25px;
+            color: var(--cor-principal);
+        }
+        .roleta-visual-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto 20px;
+        }
+        .ponteiro {
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 30px solid #c0392b;
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        .roleta-wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            border: 8px solid #fff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3), inset 0 0 15px rgba(0,0,0,0.2);
+            transition: transform 5s cubic-bezier(0.33, 1, 0.68, 1);
+        }
+        .slice {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            background: var(--slice-bg);
+            transform-origin: 100% 100%;
+            transform: rotate(var(--slice-angle)) skewY(var(--skew-angle));
+        }
+        .slice .texto-premio {
+            position: absolute;
+            box-sizing: border-box;
+            left: 5%;
+            top: 5%;
+            width: 90%;
+            height: 90%;
+            transform: skewY(calc(0deg - var(--skew-angle))) rotate(calc(var(--slice-angle-half) - 90deg));
+            transform-origin: 50% 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-right: 35%;
+            color: white;
+            font-weight: 600;
+            font-size: 13px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+            user-select: none;
+            word-break: break-word;
+        }
+        #cpf-form input {
+            width: 100%; box-sizing: border-box; padding: 14px; border: 2px solid #ddd;
+            border-radius: 8px; font-size: 16px; margin-bottom: 15px; text-align: center;
+        }
+        #cpf-form button {
+            width: 100%; padding: 14px; font-size: 16px; font-weight: bold;
+            background-color: #27ae60; color: white; border: none;
+            border-radius: 8px; cursor: pointer; transition: background-color 0.2s;
+        }
+        #cpf-form button:disabled { background-color: #95a5a6; cursor: not-allowed; }
+        .resultado-container {
+            margin-top: 25px; font-size: 18px; min-height: 50px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .resultado { font-weight: bold; color: #2e7d32; }
+        .erro { color: #c62828; font-weight: 500;}
+    </style>
+</head>
+<body>
+
+<div class="roleta-container">
+    <h2>Gire a roleta de prêmios!</h2>
+
+    <div class="roleta-visual-container">
+        <div class="ponteiro"></div>
+        <div class="roleta-wheel" id="roletaWheel"></div>
+    </div>
+
+    <form id="cpf-form" method="POST">
+        <input type="tel" name="cpf" placeholder="Digite seu CPF" required autocomplete="off">
+        <button type="submit">GIRAR A ROLETA</button>
+    </form>
+
+    <div class="resultado-container"></div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const wheel = document.getElementById('roletaWheel');
+    const form = document.getElementById('cpf-form');
+    const submitButton = form.querySelector('button');
+    const resultadoContainer = document.querySelector('.resultado-container');
+    let isSpinning = false;
+    let currentRotation = 0;
+
+    const premios = {{ premios | tojson | safe }};
+    const cores = ["#3498db", "#e74c3c", "#f1c40f", "#2ecc71", "#9b59b6", "#e67e22", "#1abc9c"];
+    const numPremios = premios.length;
+    const anguloFatia = 360 / numPremios;
+    const anguloSkew = 90 - anguloFatia;
+
+    premios.forEach((premioData, i) => {
+        const fatia = document.createElement('div');
+        fatia.className = 'slice';
+        fatia.style.setProperty('--slice-bg', cores[i % cores.length]);
+        fatia.style.setProperty('--slice-angle', (i * anguloFatia) + 'deg');
+        fatia.style.setProperty('--skew-angle', anguloSkew + 'deg');
+        fatia.style.setProperty('--slice-angle-half', (anguloFatia / 2) + 'deg');
+        
+        const textoContainer = document.createElement('div');
+        textoContainer.className = 'texto-premio';
+        textoContainer.textContent = premioData.nome;
+        fatia.appendChild(textoContainer);
+        wheel.appendChild(fatia);
+    });
+
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        if (isSpinning) return;
+
+        isSpinning = true;
+        resultadoContainer.innerHTML = '';
+        submitButton.disabled = true;
+        submitButton.textContent = 'SORTEANDO...';
+
+        const formData = new FormData(form);
+
+        fetch('{{ url_for("roleta") }}', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const premioSorteado = data.resultado.premio;
+                let winningIndex = premios.findIndex(p => p.nome === premioSorteado);
+
+                if (winningIndex !== -1) {
+                    
+                    // --- AJUSTE DE CALIBRAÇÃO VISUAL ---
+                    // Como a roleta para uma posição à frente, miramos na posição anterior para compensar.
+                    const targetIndex = (winningIndex - 1 + numPremios) % numPremios;
+
+                    const anguloDaFatiaSorteada = (targetIndex * anguloFatia) + (anguloFatia / 2);
+                    const voltasExtras = Math.floor(currentRotation / 360) + 5;
+                    const novaRotacao = (voltasExtras * 360) - anguloDaFatiaSorteada;
+                    
+                    currentRotation = novaRotacao;
+                    wheel.style.transform = `rotate(${currentRotation}deg)`;
+                    
+                    setTimeout(() => {
+                         resultadoContainer.innerHTML = `
+                            <div class="resultado">
+                                🎉 Parabéns! Você ganhou: ${data.resultado.premio}
+                                <br>
+                                <small>(Sorteio de ${data.resultado.data.split(' ')[0]})</small>
+                            </div>
+                        `;
+                        isSpinning = false;
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'GIRAR A ROLETA';
+                    }, 5000); 
+                }
+            } else {
+                resultadoContainer.innerHTML = `<div class="erro">${data.erro}</div>`;
+                isSpinning = false;
+                submitButton.disabled = false;
+                submitButton.textContent = 'GIRAR A ROLETA';
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            resultadoContainer.innerHTML = `<div class="erro">Ocorreu um erro de conexão.</div>`;
+            isSpinning = false;
+            submitButton.disabled = false;
+            submitButton.textContent = 'GIRAR A ROLETA';
+        });
+    });
+});
+</script>
+
+</body>
+</html>

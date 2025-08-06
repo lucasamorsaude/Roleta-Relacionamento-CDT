@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastrar Novo Usuário</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 450px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    .mensagem {
+      margin-bottom: 15px;
+      padding: 12px;
+      border-radius: 6px;
+      text-align: center;
+      font-weight: bold;
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        color: #555;
+        text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Cadastrar Novo Usuário</h2>
+
+    {% if mensagem %}
+      <div class="mensagem">{{ mensagem }}</div>
+    {% endif %}
+
+    <form method="POST">
+      <label for="username">Nome de Usuário:</label>
+      <input type="text" id="username" name="username" required>
+      
+      <label for="password">Senha:</label>
+      <input type="password" id="password" name="password" required>
+
+      <label for="role">Permissão:</label>
+      <select id="role" name="role">
+        <option value="user">Atendente (Padrão)</option>
+        <option value="admin">Administrador</option>
+      </select>
+
+      <button type="submit">Cadastrar Usuário</button>
+    </form>
+    <a href="{{ url_for('painel') }}" class="back-link">Voltar ao Painel</a>
+  </div>
+
+</body>
+</html>

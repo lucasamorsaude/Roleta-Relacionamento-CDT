@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Autorizar CPF para Sorteio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 450px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .mensagem {
+      margin-bottom: 15px;
+      padding: 12px;
+      border-radius: 6px;
+      text-align: center;
+      font-weight: bold;
+      background-color: #e3f2fd;
+      color: #0d47a1;
+    }
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        color: #555;
+        text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Autorizar CPF para Sorteio</h2>
+
+    {% if mensagem %}
+      <div class="mensagem">{{ mensagem }}</div>
+    {% endif %}
+
+    <form method="POST">
+      <label for="cpf">CPF do Filiado:</label>
+      <input type="text" id="cpf" name="cpf" placeholder="Digite os 11 números do CPF" required>
+      
+      <button type="submit">Autorizar CPF</button>
+    </form>
+    <a href="{{ url_for('painel') }}" class="back-link">Voltar ao Painel</a>
+  </div>
+
+</body>
+</html>
