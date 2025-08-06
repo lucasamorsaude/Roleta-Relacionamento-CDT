@@ -1,22 +1,22 @@
 [
   {
-    "nome": "Desconto de 10% em Farmácia",
+    "nome": "Consulta Odontológica Bonificada",
     "chance": 50
   },
   {
-    "nome": "Exame de Vista",
+    "nome": "Cashback R$50,00",
     "chance": 20
   },
   {
-    "nome": "Consulta Clínica",
+    "nome": "Consulta Clínica Médica",
     "chance": 15
   },
   {
-    "nome": "Limpeza Dental Simples",
-    "chance": 10
+    "nome": "Combo Simples exames",
+    "chance": 5
   },
   {
-    "nome": "Check-up Básico",
+    "nome": "Voucher Odontológico R$150,00",
     "chance": 5
   }
   
