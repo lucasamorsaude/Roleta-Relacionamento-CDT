@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerenciamento de Usuários</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --primary: #084f43;
+            --secondary: #6c757d;
+            --danger: #dc3545;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+        }
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .header-buttons .action-button {
+            background-color: transparent;
+            border: 2px solid white;
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: all 0.2s ease-in-out;
+        }
+        .header-buttons .action-button:hover {
+            background-color: white;
+            color: var(--primary);
+        }
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            color: #333;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .role-admin { font-weight: bold; color: var(--danger); }
+        .role-user { color: #333; }
+        .delete-btn {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .delete-btn:hover { background-color: #c82333; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Gerenciamento de Usuários</h1>
+        <div class="header-buttons">
+            <a href="{{ url_for('cadastrar_usuario') }}" class="action-button">Cadastrar Novo</a>
+            <a href="{{ url_for('exportar_usuarios_json') }}" class="action-button">Exportar (JSON)</a>
+            <a href="{{ url_for('painel') }}" class="action-button">Voltar</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome de Usuário</th>
+                    <th>Permissão</th>
+                    <th>Ações</th> </tr>
+            </thead>
+            <tbody id="usuarios-table-body"> {% for usuario in usuarios %}
+                <tr>
+                    <td>{{ usuario.username }}</td>
+                    <td>
+                        {% if usuario.role == 'admin' %}
+                            <span class="role-admin">Administrador</span>
+                        {% else %}
+                            <span class="role-user">Atendente</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if session.get('role') == 'admin' and session.get('usuario') != usuario.username %}
+                            <button class="delete-btn" data-username="{{ usuario.username }}" title="Excluir Usuário">X</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+<script>
+const tableBody = document.getElementById('usuarios-table-body');
+
+tableBody.addEventListener('click', function(event) {
+    if (event.target && event.target.classList.contains('delete-btn')) {
+        const button = event.target;
+        const username = button.dataset.username;
+        
+        if (confirm(`Tem certeza que deseja excluir o usuário "${username}"?`)) {
+            fetch(`/excluir-usuario/${username}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const row = button.closest('tr');
+                    row.remove();
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro na requisição:', error);
+                alert('Ocorreu um erro de conexão.');
+            });
+        }
+    }
+});
+</script>
+
+</body>
+</html>

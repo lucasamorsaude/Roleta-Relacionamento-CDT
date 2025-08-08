@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
-            --cor-principal: #005c97;
-            --cor-secundaria: #363795;
+            --cor-principal: #084f43;
+            --cor-secundaria: #0fb499;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -28,11 +28,25 @@
             max-width: 420px;
             width: 90%;
         }
-        h2 {
-            margin-top: 0;
+        
+        /* --- ESTILO ATUALIZADO PARA O TÍTULO E A LOGO --- */
+        .header-roleta {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px; /* Espaçamento entre o texto e a logo */
             margin-bottom: 25px;
-            color: var(--cor-principal);
         }
+        .header-roleta h2 {
+            margin: 0;
+            color: var(--cor-principal);
+            font-size: 24px;
+        }
+        .header-roleta img {
+            height: 40px; /* Ajuste a altura da logo como preferir */
+        }
+        /* --- FIM DA ATUALIZAÇÃO --- */
+
         .roleta-visual-container {
             position: relative;
             width: 280px;
@@ -110,14 +124,18 @@
 <body>
 
 <div class="roleta-container">
-    <h2>Gire a roleta de prêmios!</h2>
+    
+    <div class="header-roleta">
+        <h2>Gire a roleta de prêmios!</h2>
+        <img src="https://www.cartaodetodos.com.br/_next/static/media/logo-white.8905cf2f.svg" alt="Logo Cartão de Todos">
+    </div>
 
     <div class="roleta-visual-container">
         <div class="ponteiro"></div>
         <div class="roleta-wheel" id="roletaWheel"></div>
     </div>
 
-    <form id="cpf-form" method="POST">
+    <form id="cpf-form" method="POST" style="margin-top: 30px">
         <input type="tel" name="cpf" placeholder="Digite seu CPF" required autocomplete="off">
         <button type="submit">GIRAR A ROLETA</button>
     </form>
@@ -179,8 +197,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (winningIndex !== -1) {
                     
-                    // --- AJUSTE DE CALIBRAÇÃO VISUAL ---
-                    // Como a roleta para uma posição à frente, miramos na posição anterior para compensar.
                     const targetIndex = (winningIndex - 1 + numPremios) % numPremios;
 
                     const anguloDaFatiaSorteada = (targetIndex * anguloFatia) + (anguloFatia / 2);

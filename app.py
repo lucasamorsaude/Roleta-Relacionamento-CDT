@@ -141,6 +141,145 @@ def roleta():
     premios = carregar_json(PREMIOS_FILE)
     return render_template("index.html", resultado=resultado, erro=erro, premios=premios)
 
+@app.route('/visualizar-usuarios')
+def visualizar_usuarios():
+    # Segurança: Apenas administradores podem acessar esta página
+    if session.get('role') != 'admin':
+        flash("Acesso negado. Apenas administradores podem ver os usuários.", "danger")
+        return redirect(url_for('painel'))
+
+    usuarios_cadastrados = carregar_json(USUARIOS_FILE)
+
+    # Prepara a lista para exibição, removendo as senhas por segurança
+    usuarios_para_exibir = []
+    for usuario in usuarios_cadastrados:
+        usuarios_para_exibir.append({
+            "username": usuario.get("username"),
+            "role": usuario.get("role")
+        })
+
+    return render_template('visualizar_usuarios.html', usuarios=usuarios_para_exibir)
+
+@app.route('/excluir-filiado/<cpf_url>', methods=['POST'])
+def excluir_filiado(cpf_url):
+    # Etapa de segurança crucial: Apenas administradores podem excluir.
+    if session.get('role') != 'admin':
+        return jsonify({'success': False, 'message': 'Acesso negado.'}), 403
+
+    # Limpa o CPF vindo da URL para garantir a comparação
+    cpf_limpo = limpar_cpf(cpf_url)
+
+    # Carrega os dados
+    filiados = carregar_json(FILIADOS_FILE)
+    sorteios = carregar_json(SORTEIOS_FILE)
+
+    # Verifica se o filiado realmente existe antes de tentar remover
+    filiado_encontrado = any(f.get('cpf') == cpf_limpo for f in filiados)
+    if not filiado_encontrado:
+        return jsonify({'success': False, 'message': 'Filiado não encontrado.'}), 404
+
+    # Remove o filiado da lista de filiados autorizados
+    filiados_atualizados = [f for f in filiados if f.get('cpf') != cpf_limpo]
+    salvar_json(FILIADOS_FILE, filiados_atualizados)
+
+    # Remove o filiado também da lista de sorteios, se ele já tiver participado
+    sorteios_atualizados = [s for s in sorteios if s.get('cpf') != cpf_limpo]
+    salvar_json(SORTEIOS_FILE, sorteios_atualizados)
+
+    return jsonify({'success': True, 'message': 'Filiado excluído com sucesso.'})
+
+@app.route('/excluir-usuario/<username>', methods=['POST'])
+def excluir_usuario(username):
+    # Segurança: Apenas administradores podem excluir.
+    if session.get('role') != 'admin':
+        return jsonify({'success': False, 'message': 'Acesso negado.'}), 403
+
+    # Segurança 2: Impede que o admin se auto-exclua.
+    if session.get('usuario') == username:
+        return jsonify({'success': False, 'message': 'Você não pode excluir a si mesmo.'}), 400
+
+    usuarios = carregar_json(USUARIOS_FILE)
+
+    # Verifica se o usuário existe
+    usuario_encontrado = any(u.get('username') == username for u in usuarios)
+    if not usuario_encontrado:
+        return jsonify({'success': False, 'message': 'Usuário não encontrado.'}), 404
+
+    # Remove o usuário da lista
+    usuarios_atualizados = [u for u in usuarios if u.get('username') != username]
+    salvar_json(USUARIOS_FILE, usuarios_atualizados)
+
+    return jsonify({'success': True, 'message': 'Usuário excluído com sucesso.'})
+
+@app.route('/cadastrar-cpf-modal', methods=['GET', 'POST'])
+def cadastrar_cpf_modal():
+    # Garante que o usuário esteja logado, mas não precisa ser admin para cadastrar
+    if "usuario" not in session:
+        return "<p>Acesso negado. Faça o login novamente.</p>"
+
+    mensagem = None
+    sucesso = False
+    if request.method == 'POST':
+        cpf = limpar_cpf(request.form.get('cpf', ''))
+
+        if len(cpf) != 11:
+            mensagem = "CPF inválido. Deve conter 11 números."
+        else:
+            filiados = carregar_json(FILIADOS_FILE)
+            if any(f.get('cpf') == cpf for f in filiados):
+                mensagem = "Este CPF já está na lista de autorizados."
+            else:
+                filiados.append({
+                    "cpf": cpf,
+                    "cadastrado_por": session.get("usuario", "desconhecido"),
+                    "data_cadastro": datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+                })
+                salvar_json(FILIADOS_FILE, filiados)
+                mensagem = "CPF autorizado com sucesso!"
+                sucesso = True # Sinaliza que o cadastro deu certo
+
+    return render_template("cadastrar_cpf_modal.html", mensagem=mensagem, sucesso=sucesso)
+
+
+@app.route('/visualizar-filiados')
+def visualizar_filiados():
+    if "usuario" not in session:
+        flash("Faça login para acessar essa página.", "warning")
+        return redirect(url_for('login'))
+
+    # Carrega os dois arquivos de dados
+    filiados_cadastrados = carregar_json(FILIADOS_FILE)
+    sorteios_realizados = carregar_json(SORTEIOS_FILE)
+
+    # Cria um dicionário dos sorteados para uma busca rápida
+    mapa_sorteados = {item['cpf']: item for item in sorteios_realizados}
+
+    # Combina as informações
+    info_completa_filiados = []
+    for filiado in filiados_cadastrados:
+        cpf = filiado['cpf']
+        if cpf in mapa_sorteados:
+            # Se o CPF está no mapa, significa que já foi sorteado
+            info_completa_filiados.append({
+                'cpf': cpf,
+                'cadastrado_por': filiado.get('cadastrado_por', 'N/A'),
+                'status': 'Já Sorteado',
+                'premio': mapa_sorteados[cpf].get('premio', '-'),
+                'data_sorteio': mapa_sorteados[cpf].get('data_sorteio', '-')
+            })
+        else:
+            # Se não, ainda está aguardando
+            info_completa_filiados.append({
+                'cpf': cpf,
+                'cadastrado_por': filiado.get('cadastrado_por', 'N/A'),
+                'status': 'Aguardando Sorteio',
+                'premio': '-',
+                'data_sorteio': '-'
+            })
+    
+    return render_template('visualizar_filiados.html', filiados=info_completa_filiados)
+
+
 @app.route('/exportar-sorteios-excel')
 def exportar_sorteios_excel():
     if "usuario" not in session:
@@ -160,33 +299,6 @@ def exportar_usuarios_json():
         return redirect(url_for('painel'))
     return send_file(USUARIOS_FILE, as_attachment=True)
 
-@app.route('/cadastrar-cpf', methods=['GET', 'POST'])
-def cadastrar_cpf():
-    if "usuario" not in session:
-        return redirect(url_for('login'))
-
-    mensagem = None
-    if request.method == 'POST':
-        cpf = limpar_cpf(request.form.get('cpf', ''))
-
-        if len(cpf) != 11:
-            mensagem = "CPF inválido. Deve conter 11 números."
-        else:
-            filiados = carregar_json(FILIADOS_FILE)
-            # LÓGICA ATUALIZADA: Verifica se já existe um objeto com aquele CPF
-            if any(f.get('cpf') == cpf for f in filiados):
-                mensagem = "Este CPF já está na lista de autorizados."
-            else:
-                # LÓGICA ATUALIZADA: Salva um objeto completo
-                filiados.append({
-                    "cpf": cpf,
-                    "cadastrado_por": session.get("usuario", "desconhecido"),
-                    "data_cadastro": datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-                })
-                salvar_json(FILIADOS_FILE, filiados)
-                mensagem = "CPF autorizado para o sorteio com sucesso!"
-
-    return render_template("cadastrar_cpf.html", mensagem=mensagem)
 
 @app.route('/exportar-sorteios-json')
 def exportar_sorteios_json():

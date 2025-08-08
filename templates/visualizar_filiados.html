@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Status dos Filiados</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --primary: #084f43;
+            --secondary: #6c757d;
+            --success: #28a745;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+        }
+        header {
+            background: var(--primary); color: white; padding: 15px 30px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        header h1 { margin: 0; font-size: 24px; }
+        .header-buttons { display: flex; gap: 10px; }
+        .header-buttons .action-button, #btn-novo {
+            background-color: white; border: 2px solid white; color: var(--primary);
+            padding: 8px 16px; text-decoration: none; border-radius: 6px;
+            font-weight: bold; transition: all 0.2s ease-in-out; cursor: pointer;
+        }
+        #btn-novo { background-color: var(--success); color: white; border-color: var(--success); }
+        .header-buttons .action-button:hover, #btn-novo:hover {
+            opacity: 0.8;
+        }
+        .container {
+            max-width: 1200px; margin: 30px auto; background: white;
+            padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f2f2f2; color: #333; font-weight: 600; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .status {
+            padding: 5px 10px; border-radius: 15px; font-size: 0.9em;
+            font-weight: bold; color: white; text-align: center; display: inline-block;
+        }
+        .status-sorteado { background-color: var(--success); }
+        .status-aguardando { background-color: #ffc107; color: #333; }
+
+        /* --- ESTILOS DO MODAL --- */
+        .modal {
+            display: none; position: fixed; z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe; margin: 15% auto;
+            padding: 20px; border: 1px solid #888;
+            width: 80%; max-width: 500px; border-radius: 10px;
+            position: relative;
+        }
+        .close {
+            color: #aaa; float: right; font-size: 28px; font-weight: bold;
+            position: absolute; top: 10px; right: 20px;
+        }
+        .close:hover, .close:focus {
+            color: black; text-decoration: none; cursor: pointer;
+        }
+        .modal-content iframe {
+            width: 100%; height: 320px; border: none;
+        }
+        /* --- ESTILO PARA O BOTÃO DE EXCLUIR --- */
+        .delete-btn {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            background-color: #ec4556
+        }
+        .delete-btn:hover { background-color: #c82333; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Status dos Filiados</h1>
+        <div class="header-buttons">
+            <button id="btn-novo">Novo Filiado</button>
+            <a href="{{ url_for('exportar_sorteios_excel') }}" class="action-button">Exportar (Excel)</a>
+            {% if session.get('role') == 'admin' %}
+                <a href="{{ url_for('exportar_sorteios_json') }}" class="action-button">Exportar (JSON)</a>
+            {% endif %}
+            <a href="{{ url_for('painel') }}" class="action-button">Voltar</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <table>
+            <thead>
+                <tr>
+                    <th>CPF</th>
+                    <th>Status</th>
+                    <th>Prêmio Ganhado</th>
+                    <th>Data do Sorteio</th>
+                    <th>Cadastrado Por</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="filiados-table-body">
+                {% if filiados %}
+                    {% for filiado in filiados %}
+                    <tr>
+                        <td>{{ filiado.cpf }}</td>
+                        <td>
+                            {% if filiado.status == 'Já Sorteado' %}
+                                <span class="status status-sorteado">{{ filiado.status }}</span>
+                            {% else %}
+                                <span class="status status-aguardando">{{ filiado.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ filiado.premio }}</td>
+                        <td>{{ filiado.data_sorteio }}</td>
+                        <td>{{ filiado.cadastrado_por }}</td>
+                        <td>
+                        {% if session.get('role') == 'admin' %}
+                            <button class="delete-btn" data-cpf="{{ filiado.cpf }}" title="Excluir Filiado">X</button>
+                        {% endif %}
+                    </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 20px;">Nenhum filiado cadastrado ainda.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id="myModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <iframe id="modal-iframe" src="" style="width:100%; height:320px; border:0;"></iframe>
+      </div>
+    </div>
+
+<script>
+// Pega os elementos do modal
+var modal = document.getElementById("myModal");
+var btn = document.getElementById("btn-novo");
+var span = document.getElementsByClassName("close")[0];
+var iframe = document.getElementById("modal-iframe");
+
+// Quando o usuário clica no botão, abre o modal
+btn.onclick = function() {
+  iframe.src = "{{ url_for('cadastrar_cpf_modal') }}"; // Carrega o formulário no iframe
+  modal.style.display = "block";
+}
+
+// Quando o usuário clica no (x), fecha o modal
+span.onclick = function() {
+  modal.style.display = "none";
+}
+
+// Quando o usuário clica fora do modal, fecha ele
+window.onclick = function(event) {
+  if (event.target == modal) {
+    modal.style.display = "none";
+  }
+}
+
+const tableBody = document.getElementById('filiados-table-body');
+
+tableBody.addEventListener('click', function(event) {
+    // Verifica se o elemento clicado é um botão de excluir
+    if (event.target && event.target.classList.contains('delete-btn')) {
+        const button = event.target;
+        const cpf = button.dataset.cpf;
+        
+        // Pede confirmação ao usuário
+        if (confirm(`Tem certeza que deseja excluir o filiado com CPF ${cpf}? Esta ação não pode ser desfeita.`)) {
+            fetch(`/excluir-filiado/${cpf}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove a linha da tabela da tela sem precisar recarregar
+                    const row = button.closest('tr');
+                    row.remove();
+                    alert(data.message); // Opcional: alerta de sucesso
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro na requisição:', error);
+                alert('Ocorreu um erro de conexão.');
+            });
+        }
+    }
+});
+</script>
+
+</body>
+</html>

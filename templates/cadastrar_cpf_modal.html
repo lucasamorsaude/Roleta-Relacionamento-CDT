@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastrar CPF</title>
+    <style>
+        :root {
+            --primary: #28a745;
+            --success-bg: #d4edda;
+            --success-text: #155724;
+            --danger-bg: #f8d7da;
+            --danger-text: #721c24;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #fff;
+            margin: 20px;
+        }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        .btn {
+            width: 100%; padding: 12px; font-size: 16px; font-weight: bold;
+            border-radius: 6px; border: none; cursor: pointer;
+            background-color: var(--primary); color: white;
+        }
+        .message {
+            padding: 10px; margin-bottom: 15px; border-radius: 6px; text-align: center;
+        }
+        .message.success { background-color: var(--success-bg); color: var(--success-text); }
+        .message.error { background-color: var(--danger-bg); color: var(--danger-text); }
+    </style>
+</head>
+<body>
+    <h3>Cadastrar Novo Filiado</h3>
+
+    {% if mensagem %}
+        <div class="message {{ 'success' if sucesso else 'error' }}">{{ mensagem }}</div>
+    {% endif %}
+
+    <form method="POST">
+        <div class="form-group">
+            <label for="cpf">CPF do Filiado:</label>
+            <input type="tel" id="cpf" name="cpf" placeholder="Digite os 11 números" required>
+        </div>
+        <button type="submit" class="btn">Autorizar CPF</button>
+    </form>
+
+    {% if sucesso %}
+    <script>
+        // Avisa a página "pai" (visualizar_filiados) para recarregar e ver o novo item
+        window.parent.location.reload();
+    </script>
+    {% endif %}
+</body>
+</html>
